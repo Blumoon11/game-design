@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Innovators: K-12 School Simulation</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .game-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+        }
+        .button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .metrics {
+            margin: 20px 0;
+            display: flex;
+            justify-content: space-around;
+        }
+        .metric {
+            display: flex;
+            align-items: center;
+        }
+        .metric img {
+            width: 40px;
+            margin-right: 10px;
+        }
+        .hidden {
+            display: none;
+        }
+        .scenario {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>AI Innovators: K-12 School Simulation</h1>
+        
+        <!-- Player Selection -->
+        <div id="playerSelection">
+            <h2>Select Number of Players</h2>
+            <button class="button" onclick="selectPlayers(1)">1 Player</button>
+            <button class="button" onclick="selectPlayers(2)">2 Players</button>
+            <button class="button" onclick="selectPlayers(3)">3 Players</button>
+        </div>
+        
+        <!-- Role Selection for Players -->
+        <div id="roleSelection" class="hidden">
+            <h2>Select Role for Player <span id="currentPlayer"></span></h2>
+            <button class="button" id="technologistButton" onclick="selectRole('Technologist')">Technologist</button>
+            <button class="button" id="ethicsAdvisorButton" onclick="selectRole('Ethics Advisor')">Ethics Advisor</button>
+            <button class="button" id="principalButton" onclick="selectRole('Principal')">Principal</button>
+        </div>
+
+        <!-- Game Story -->
+        <div id="gameStory" class="hidden">
+            <img id="roleImage" src="https://img.cls.cn/images/20211215/TDW1S96N6x.jpeg" alt="Role Image" style="max-width: 300px; margin-bottom: 20px;">
+            <p id="roleDescription">Welcome! Your school is introducing AI technologies. Make decisions to balance innovation, ethics, and budget.</p>
+            <button class="button" onclick="startScenario()">Start Scenarios</button>
+        </div>
+
+        <!-- Scenario Section -->
+        <div id="scenarioSection" class="hidden">
+            <div id="scenarioContent">
+                <!-- Scenario content will be dynamically injected here -->
+            </div>
+        </div>
+
+        <!-- Metrics -->
+        <div class="metrics">
+            <div class="metric">
+                <img src="https://www.tyccommunication.com/wp-content/uploads/2018/05/What-is-Public-Opinion-Research-Why-Should-You-Do-It.jpg" alt="Public Opinion Icon" /> <!-- Replace with real icon -->
+                <div>Public Opinion: <span id="publicOpinion">50</span></div>
+            </div>
+            <div class="metric">
+                <img src="https://cdn.prod.website-files.com/5e5fd804279321d5de64a8a3/635c3105217fe8723cbffbbe_budget%20vs%20actual%20report.png" alt="Budget Icon" /> <!-- Replace with real icon -->
+                <div>School Budget: <span id="budget">100</span></div>
+            </div>
+            <div class="metric">
+                <img src="https://www.aspistrategist.org.au/wp-content/uploads/2024/03/GettyImages-1628291798-scaled.jpg" alt="AI Score Icon" /> <!-- Replace with real icon -->
+                <div>AI Score: <span id="aiScore">50</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let players = [];
+        let currentPlayer = 1;
+        let totalPlayers = 1;
+        let publicOpinion = 50;
+        let budget = 100;
+        let aiScore = 50;
+        let currentScenario = 0;
+        let scenarios = {
+            Technologist: [
+                { description: 'A new AI-powered grading system is being proposed. It could automate grading, but teachers are concerned about accuracy and bias. The school board has asked for your input.', 
+                  question: 'How do you want to proceed with implementing the AI grading system?', 
+                  options: ['Fully Automate Grading', 'Assist Teachers with Grading', 'Use AI for Administrative Tasks Only'], 
+                  effects: [{ aiScore: 30, publicOpinion: -20 }, { aiScore: 20, publicOpinion: -10, budget: -10 }, { aiScore: 10, budget: 10 }]
+                },
+                { description: 'The AI grading system has faced technical issues during exams. Students and teachers are frustrated. What will you do?', 
+                  question: 'How do you plan to fix the issue?', 
+                  options: ['Patch the System Immediately', 'Temporarily Suspend AI Grading', 'Return to Manual Grading for Exams'], 
+                  effects: [{ aiScore: 15, budget: -20 }, { aiScore: -5, publicOpinion: 10 }, { publicOpinion: 15, aiScore: -10 }]
+                },
+                { description: 'Parents are concerned about the potential of AI technology replacing teachers in the classroom. They are protesting.', 
+                  question: 'What action will you take to address the protests?', 
+                  options: ['Hold a Community Meeting', 'Ignore Protests and Continue', 'Limit AI Use to Administrative Tasks'], 
+                  effects: [{ publicOpinion: 20, budget: -10 }, { publicOpinion: -20, aiScore: 20 }, { publicOpinion: 10, aiScore: -10 }]
+                }
+            ],
+            EthicsAdvisor: [
+                { description: 'There are privacy concerns regarding the new AI surveillance system installed in classrooms. Parents and advocacy groups are protesting.', 
+                  question: 'What do you recommend regarding the use of AI surveillance?', 
+                  options: ['Enhance Privacy with Strict Regulations', 'Limit AI Use to Non-Sensitive Areas', 'Ignore Privacy Concerns for Efficiency'], 
+                  effects: [{ publicOpinion: 20, budget: -10 }, { aiScore: 15, publicOpinion: -5 }, { aiScore: 25, publicOpinion: -25 }]
+                },
+                { description: 'The AI system is being accused of bias in grading students of certain demographic groups. The media has reported on this issue.', 
+                  question: 'How should the school respond?', 
+                  options: ['Acknowledge and Address the Bias', 'Investigate Further Before Acting', 'Deny the Accusations'], 
+                  effects: [{ publicOpinion: 25, aiScore: -10 }, { publicOpinion: 10, aiScore: -5 }, { aiScore: 20, publicOpinion: -20 }]
+                },
+                { description: 'An ethical review of the AI surveillance system reveals gaps in how data is handled and stored. This could lead to potential legal issues.', 
+                  question: 'What should you advise?', 
+                  options: ['Suspend AI Surveillance Immediately', 'Fix the Issues Quietly', 'Publicly Commit to Fixing Issues'], 
+                  effects: [{ publicOpinion: 20, aiScore: -10 }, { aiScore: 20, publicOpinion: -10 }, { publicOpinion: 15, budget: -10 }]
+                }
+            ],
+            Principal: [
+                { description: 'The school budget for AI development is being reviewed. The school board wants your input on how much to allocate toward AI tools.', 
+                  question: 'How much budget should be allocated towards AI development?', 
+                  options: ['Increase AI Budget by 30%', 'Moderately Increase AI Budget by 10%', 'Cut AI Budget to Save Funds'], 
+                  effects: [{ aiScore: 30, budget: -30 }, { aiScore: 10, budget: -10 }, { aiScore: -10, budget: 20 }]
+                },
+                { description: 'There is pressure from the community to invest in AI tools to improve school performance, but the budget is tight.', 
+                  question: 'Should you allocate more resources towards AI despite budget constraints?', 
+                  options: ['Invest Heavily in AI', 'Invest Moderately', 'Do Not Invest Further'], 
+                  effects: [{ aiScore: 25, budget: -20 }, { aiScore: 15, budget: -10 }, { publicOpinion: 10, aiScore: -10 }]
+                },
+                { description: 'The school board wants to cut funding for extracurricular activities to free up more budget for AI development.', 
+                  question: 'Should you approve this decision?', 
+                  options: ['Approve the Budget Cuts', 'Keep the Current Budget', 'Reallocate Some Funds to AI'], 
+                  effects: [{ aiScore: 30, publicOpinion: -20 }, { publicOpinion: 20, aiScore: -10 }, { aiScore: 10, budget: -10 }]
+                }
+            ]
+        };
+
+        function selectPlayers(num) {
+            totalPlayers = num;
+            document.getElementById('playerSelection').classList.add('hidden');
+            document.getElementById('roleSelection').classList.remove('hidden');
+            document.getElementById('currentPlayer').innerText = currentPlayer;
+        }
+
+        function selectRole(role) {
+            players.push({ player: currentPlayer, role, scenarioIndex: 0 });
+            
+            // Disable the selected role button
+            if (role === 'Technologist') {
+                document.getElementById('technologistButton').disabled = true;
+            } else if (role === 'Ethics Advisor') {
+                document.getElementById('ethicsAdvisorButton').disabled = true;
+            } else if (role === 'Principal') {
+                document.getElementById('principalButton').disabled = true;
+            }
+
+            currentPlayer++;
+            if (currentPlayer > totalPlayers) {
+                // All players have selected roles
+                document.getElementById('roleSelection').classList.add('hidden');
+                document.getElementById('gameStory').classList.remove('hidden');
+            } else {
+                // Move to the next player to select their role
+                document.getElementById('currentPlayer').innerText = currentPlayer;
+            }
+        }
+
+        function startScenario() {
+            document.getElementById('gameStory').classList.add('hidden');
+            document.getElementById('scenarioSection').classList.remove('hidden');
+            loadNextScenario();
+        }
+
+        function loadNextScenario() {
+            if (currentScenario < players.length) {
+                const player = players[currentScenario];
+                const scenario = scenarios[player.role][player.scenarioIndex];
+
+                if (scenario) {
+                    document.getElementById('scenarioContent').innerHTML = `
+                        <h3>${scenario.description}</h3>
+                        <p>${scenario.question}</p>
+                        <p>Player ${player.player} (${player.role}), make your choice:</p>
+                        <button class="button" onclick="makeDecision(${currentScenario}, 0)">1. ${scenario.options[0]}</button>
+                        <button class="button" onclick="makeDecision(${currentScenario}, 1)">2. ${scenario.options[1]}</button>
+                        <button class="button" onclick="makeDecision(${currentScenario}, 2)">3. ${scenario.options[2]}</button>
+                    `;
+                } else {
+                    document.getElementById('scenarioContent').innerHTML = '<h3>All scenarios completed. Review your final metrics!</h3>';
+                }
+            } else {
+                document.getElementById('scenarioContent').innerHTML = '<h3>All scenarios completed. Review your final metrics!</h3>';
+            }
+        }
+
+        function makeDecision(playerIndex, optionIndex) {
+            const player = players[playerIndex];
+            const scenario = scenarios[player.role][player.scenarioIndex];
+            const effects = scenario.effects[optionIndex];
+
+            // Apply the effects to the metrics
+            publicOpinion += effects.publicOpinion || 0;
+            budget += effects.budget || 0;
+            aiScore += effects.aiScore || 0;
+
+            updateMetrics();
+
+            // Move to the next player's scenario
+            player.scenarioIndex++;
+            currentScenario++;
+            if (currentScenario >= players.length) {
+                currentScenario = 0; // Loop back to the first player
+            }
+
+            loadNextScenario();
+        }
+
+        function updateMetrics() {
+            document.getElementById('publicOpinion').innerText = publicOpinion;
+            document.getElementById('budget').innerText = budget;
+            document.getElementById('aiScore').innerText = aiScore;
+        }
+    </script>
+</body>
+</html>
