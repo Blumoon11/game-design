@@ -37,6 +37,14 @@
         .button:hover {
             background-color: #45a049;
         }
+        /* Styling for Turn Back and Replay buttons */
+        .black-button {
+            background-color: black;
+            color: white;
+        }
+        .black-button:hover {
+            background-color: #333;
+        }
         .metrics {
             margin: 20px 0;
             display: flex;
@@ -74,7 +82,7 @@
         <div id="roleSelection" class="hidden">
             <h2>Select Role for Player <span id="currentPlayer"></span></h2>
             <button class="button" id="technologistButton" onclick="selectRole('Technologist')">Technologist</button>
-            <button class="button" id="ethicsAdvisorButton" onclick="selectRole('Ethics Advisor')">Ethics Advisor</button>
+            <button class="button" id="ethicsAdvisorButton" onclick="selectRole('EthicsAdvisor')">Ethics Advisor</button>
             <button class="button" id="principalButton" onclick="selectRole('Principal')">Principal</button>
         </div>
 
@@ -90,6 +98,8 @@
             <div id="scenarioContent">
                 <!-- Scenario content will be dynamically injected here -->
             </div>
+            <button class="black-button hidden" id="turnBackButton" onclick="turnBack()">Turn Back</button>
+            <button class="black-button hidden" id="replayButton" onclick="replayGame()">Replay</button>
         </div>
 
         <!-- Metrics -->
@@ -117,6 +127,9 @@
         let budget = 100;
         let aiScore = 50;
         let currentScenario = 0;
+        let scenarioHistory = []; // Store decisions to allow turning back
+        let selectedRoles = new Set(); // Store selected roles to prevent duplicate selections
+
         let scenarios = {
             Technologist: [
                 { description: 'A new AI-powered grading system is being proposed. It could automate grading, but teachers are concerned about accuracy and bias. The school board has asked for your input.', 
@@ -179,9 +192,15 @@
         }
 
         function selectRole(role) {
+            if (selectedRoles.has(role)) {
+                alert("This role is already taken. Please choose another role.");
+                return;
+            }
+
             players.push({ player: currentPlayer, role, scenarioIndex: 0 });
-            
-            // Disable the selected role button
+            selectedRoles.add(role);
+
+            // Disable the selected role button for other players
             if (role === 'Technologist') {
                 document.getElementById('technologistButton').disabled = true;
             } else if (role === 'Ethics Advisor') {
@@ -205,6 +224,8 @@
             document.getElementById('gameStory').classList.add('hidden');
             document.getElementById('scenarioSection').classList.remove('hidden');
             loadNextScenario();
+            document.getElementById('turnBackButton').classList.remove('hidden');
+            document.getElementById('replayButton').classList.remove('hidden');
         }
 
         function loadNextScenario() {
@@ -234,7 +255,10 @@
             const scenario = scenarios[player.role][player.scenarioIndex];
             const effects = scenario.effects[optionIndex];
 
-            // Apply the effects to the metrics
+            // Store scenario history to allow turning back
+            scenarioHistory.push({ playerIndex, scenarioIndex: player.scenarioIndex, effects });
+
+            // Apply the effects to the metrics (shared between players)
             publicOpinion += effects.publicOpinion || 0;
             budget += effects.budget || 0;
             aiScore += effects.aiScore || 0;
@@ -255,6 +279,49 @@
             document.getElementById('publicOpinion').innerText = publicOpinion;
             document.getElementById('budget').innerText = budget;
             document.getElementById('aiScore').innerText = aiScore;
+        }
+
+        function turnBack() {
+            if (scenarioHistory.length > 0) {
+                const lastAction = scenarioHistory.pop();
+                const { playerIndex, scenarioIndex, effects } = lastAction;
+
+                // Revert the metrics
+                publicOpinion -= effects.publicOpinion || 0;
+                budget -= effects.budget || 0;
+                aiScore -= effects.aiScore || 0;
+
+                updateMetrics();
+
+                // Revert to the previous scenario
+                players[playerIndex].scenarioIndex = scenarioIndex;
+                currentScenario = playerIndex;
+                loadNextScenario();
+            }
+        }
+
+        function replayGame() {
+            // Reset the game state and return to the start page
+            publicOpinion = 50;
+            budget = 100;
+            aiScore = 50;
+            currentScenario = 0;
+            scenarioHistory = [];
+            players = [];
+            currentPlayer = 1;
+            selectedRoles.clear();  // Clear the set of selected roles
+
+            // Enable all role buttons again
+            document.getElementById('technologistButton').disabled = false;
+            document.getElementById('ethicsAdvisorButton').disabled = false;
+            document.getElementById('principalButton').disabled = false;
+
+            // Reset the UI
+            document.getElementById('scenarioSection').classList.add('hidden');
+            document.getElementById('roleSelection').classList.add('hidden');
+            document.getElementById('gameStory').classList.add('hidden');
+            document.getElementById('playerSelection').classList.remove('hidden');
+            updateMetrics();
         }
     </script>
 </body>
